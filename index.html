@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>창고 관리 시스템</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg2: #1a1d27;
+    --bg3: #22263a;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.15);
+    --text: #f0f2f8;
+    --text2: #9aa0b8;
+    --text3: #5c6280;
+    --blue: #4f7eff;
+    --blue-bg: rgba(79,126,255,0.12);
+    --green: #3dd68c;
+    --green-bg: rgba(61,214,140,0.12);
+    --amber: #f5a623;
+    --amber-bg: rgba(245,166,35,0.12);
+    --red: #f25f5c;
+    --red-bg: rgba(242,95,92,0.12);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  /* Header */
+  .header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 16px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-title {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+  .header-badge {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    background: var(--blue-bg);
+    color: var(--blue);
+    border: 1px solid rgba(79,126,255,0.25);
+  }
+  /* Tab bar */
+  .tabbar {
+    display: flex;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 8px;
+  }
+  .tab {
+    flex: 1;
+    padding: 14px 0 12px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text3);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .tab.active {
+    color: var(--blue);
+    border-bottom-color: var(--blue);
+  }
+  .tab svg { width: 16px; height: 16px; }
+  /* Main content */
+  .content { flex: 1; padding: 16px; max-width: 600px; margin: 0 auto; width: 100%; }
+  /* Section */
+  .section { display: none; }
+  .section.active { display: block; }
+  /* Card */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .card-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text3);
+    margin-bottom: 10px;
+  }
+  /* Field */
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  .field-label {
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .field-label .required {
+    color: var(--red);
+    font-size: 10px;
+  }
+  /* Input with scan */
+  .input-wrap {
+    display: flex;
+    gap: 8px;
+  }
+  .input-wrap input {
+    flex: 1;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-size: 15px;
+    padding: 11px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+  .input-wrap input:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(79,126,255,0.1);
+  }
+  .input-wrap input::placeholder { color: var(--text3); }
+  .scan-btn {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    min-width: 46px;
+    transition: all 0.15s;
+  }
+  .scan-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .scan-btn:active { transform: scale(0.95); }
+  .scan-btn svg { width: 20px; height: 20px; }
+  /* Number input */
+  .qty-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .qty-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .qty-btn:hover { border-color: var(--blue); }
+  .qty-btn:active { transform: scale(0.95); }
+  .qty-wrap input {
+    flex: 1;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-size: 18px;
+    font-weight: 600;
+    padding: 8px 14px;
+    outline: none;
+    text-align: center;
+    -webkit-appearance: none;
+  }
+  .qty-wrap input:focus { border-color: var(--blue); }
+  /* Save button */
+  .save-btn {
+    width: 100%;
+    padding: 15px;
+    border-radius: var(--radius);
+    background: var(--blue);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: -0.2px;
+    margin-top: 4px;
+  }
+  .save-btn:hover { background: #6b93ff; }
+  .save-btn:active { transform: scale(0.98); }
+  .save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  /* Toast */
+  .toast-wrap {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    pointer-events: none;
+    width: 90%;
+    max-width: 360px;
+  }
+  .toast {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    animation: slideUp 0.3s ease;
+    backdrop-filter: blur(12px);
+  }
+  .toast.success { border-color: rgba(61,214,140,0.3); }
+  .toast.error { border-color: rgba(242,95,92,0.3); }
+  .toast-icon { font-size: 18px; flex-shrink: 0; }
+  .toast-text { flex: 1; color: var(--text); }
+  .toast-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  /* Log list */
+  .log-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .log-count {
+    font-size: 12px;
+    color: var(--text3);
+  }
+  .log-clear {
+    font-size: 12px;
+    color: var(--red);
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background 0.15s;
+  }
+  .log-clear:hover { background: var(--red-bg); }
+  .log-list { display: flex; flex-direction: column; gap: 6px; }
+  .log-item {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: fadeIn 0.25s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .log-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .log-dot.inbound { background: var(--blue); }
+  .log-dot.move { background: var(--green); }
+  .log-info { flex: 1; min-width: 0; }
+  .log-item-title {
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .log-item-sub {
+    font-size: 11px;
+    color: var(--text2);
+    margin-top: 2px;
+  }
+  .log-qty {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    flex-shrink: 0;
+  }
+  .log-time {
+    font-size: 10px;
+    color: var(--text3);
+    flex-shrink: 0;
+  }
+  .empty-log {
+    text-align: center;
+    padding: 32px 0;
+    color: var(--text3);
+    font-size: 13px;
+  }
+  /* Camera modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 20px;
+  }
+  .modal-card {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    width: 100%;
+    max-width: 420px;
+    overflow: hidden;
+  }
+  .modal-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .modal-title { font-size: 15px; font-weight: 600; }
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--text2);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    display: flex;
+  }
+  .modal-close:hover { background: var(--bg3); color: var(--text); }
+  .camera-area {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: #000;
+    overflow: hidden;
+  }
+  #cameraVideo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .scan-guide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+  .scan-box {
+    width: 75%;
+    height: 52%;
+    border: 2px solid var(--blue);
+    border-radius: 8px;
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);
+    position: relative;
+  }
+  .scan-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--blue), transparent);
+    animation: scan 2s linear infinite;
+  }
+  @keyframes scan {
+    0% { top: 0; }
+    100% { top: 100%; }
+  }
+  .scan-corner {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+  }
+  .scan-corner.tl { top: -2px; left: -2px; border-top: 3px solid #fff; border-left: 3px solid #fff; border-radius: 4px 0 0 0; }
+  .scan-corner.tr { top: -2px; right: -2px; border-top: 3px solid #fff; border-right: 3px solid #fff; border-radius: 0 4px 0 0; }
+  .scan-corner.bl { bottom: -2px; left: -2px; border-bottom: 3px solid #fff; border-left: 3px solid #fff; border-radius: 0 0 0 4px; }
+  .scan-corner.br { bottom: -2px; right: -2px; border-bottom: 3px solid #fff; border-right: 3px solid #fff; border-radius: 0 0 4px 0; }
+  .scan-hint {
+    position: absolute;
+    bottom: 16px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+  }
+  .modal-actions {
+    padding: 12px 16px;
+    display: flex;
+    gap: 8px;
+  }
+  .modal-actions button {
+    flex: 1;
+    padding: 11px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+  }
+  .btn-cancel { background: var(--bg3); color: var(--text2); border: 1px solid var(--border) !important; }
+  .btn-capture { background: var(--blue); color: #fff; }
+  .btn-cancel:hover { color: var(--text); }
+  .btn-capture:hover { background: #6b93ff; }
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+  }
+  .stat-label { font-size: 11px; color: var(--text3); margin-bottom: 6px; }
+  .stat-value { font-size: 24px; font-weight: 600; }
+  .stat-value.blue { color: var(--blue); }
+  .stat-value.green { color: var(--green); }
+  /* Status indicator */
+  .status-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--bg3);
+    border-radius: var(--radius-sm);
+    margin-bottom: 14px;
+    font-size: 12px;
+    color: var(--text2);
+  }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+  /* Loading spinner */
+  .spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  /* Hint badge */
+  .hint {
+    font-size: 11px;
+    color: var(--text3);
+    padding: 6px 10px;
+    background: var(--bg3);
+    border-radius: var(--radius-sm);
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .hint svg { width: 12px; height: 12px; flex-shrink: 0; }
+  canvas#ocr { display: none; }
+</style>
+</head>
+<body>
+<div class="header">
+  <span class="header-title">📦 창고 관리</span>
+  <span class="header-badge" id="sheetStatus">시트 연결 중...</span>
+</div>
+<div class="tabbar">
+  <div class="tab active" onclick="switchTab('inbound', event)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    입고
+  </div>
+  <div class="tab" onclick="switchTab('move', event)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>
+    로케이션 이동
+  </div>
+  <div class="tab" onclick="switchTab('log', event)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+    작업 로그
+  </div>
+</div>
+<div class="content">
+  <!-- 입고 탭 -->
+  <div class="section active" id="section-inbound">
+    <div class="status-row">
+      <div class="status-dot"></div>
+      저장 후 폼 유지 · 연속 입력 가능
+    </div>
+    <div class="card">
+      <div class="card-label">입고 정보</div>
+      <div class="field">
+        <div class="field-label">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          입고 품목 <span class="required">필수</span>
+        </div>
+        <div class="input-wrap">
+          <input type="text" id="ib-item" placeholder="바코드 스캔 또는 직접 입력" autocomplete="off"
+            onkeydown="handleItemKeydown(event, 'ib-location')" />
+          <button class="scan-btn" onclick="openCamera('ib-item')" title="카메라 스캔">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 6a2 2 0 012-2h2M18 4h2a2 2 0 012 2v2M4 18v2a2 2 0 002 2h2M18 20h2a2 2 0 002-2v-2"/>
+              <rect x="8" y="8" width="8" height="8" rx="1"/>
+            </svg>
+          </button>
+        </div>
+        <div class="hint">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+          스캔 또는 입력 후 엔터 → 로케이션 칸으로 이동
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+          입고 로케이션 <span class="required">필수</span>
+        </div>
+        <div class="input-wrap">
+          <input type="text" id="ib-location" placeholder="예: 2P-03-03-01" autocomplete="off"
+            onkeydown="if(event.key==='Enter'){document.getElementById('ib-qty').focus()}" />
+          <button class="scan-btn" onclick="openCamera('ib-location')" title="카메라 스캔">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 6a2 2 0 012-2h2M18 4h2a2 2 0 012 2v2M4 18v2a2 2 0 002 2h2M18 20h2a2 2 0 002-2v-2"/>
+              <rect x="8" y="8" width="8" height="8" rx="1"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/></svg>
+          수량 <span class="required">필수</span>
+        </div>
+        <div class="qty-wrap">
+          <button class="qty-btn" onclick="changeQty('ib-qty', -1)">−</button>
+          <input type="number" id="ib-qty" value="1" min="1"
+            onkeydown="if(event.key==='Enter'){saveInbound()}" />
+          <button class="qty-btn" onclick="changeQty('ib-qty', 1)">+</button>
+        </div>
+      </div>
+    </div>
+    <button class="save-btn" id="ib-save-btn" onclick="saveInbound()">입고 저장</button>
+  </div>
+  <!-- 로케이션 이동 탭 -->
+  <div class="section" id="section-move">
+    <div class="status-row">
+      <div class="status-dot"></div>
+      저장 후 폼 유지 · 연속 이동 처리 가능
+    </div>
+    <div class="card">
+      <div class="card-label">이동 정보</div>
+      <div class="field">
+        <div class="field-label">이동 품목 <span class="required">필수</span></div>
+        <div class="input-wrap">
+          <input type="text" id="mv-item" placeholder="바코드 스캔 또는 직접 입력" autocomplete="off"
+            onkeydown="handleItemKeydown(event, 'mv-from')" />
+          <button class="scan-btn" onclick="openCamera('mv-item')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 6a2 2 0 012-2h2M18 4h2a2 2 0 012 2v2M4 18v2a2 2 0 002 2h2M18 20h2a2 2 0 002-2v-2"/>
+              <rect x="8" y="8" width="8" height="8" rx="1"/>
+            </svg>
+          </button>
+        </div>
+        <div class="hint">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+          스캔 또는 입력 후 엔터 → 반출 로케이션으로 이동
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label">반출 로케이션 <span class="required">필수</span></div>
+        <div class="input-wrap">
+          <input type="text" id="mv-from" placeholder="기존 위치 예: 2P-03-03-01" autocomplete="off"
+            onkeydown="if(event.key==='Enter'){document.getElementById('mv-to').focus()}" />
+          <button class="scan-btn" onclick="openCamera('mv-from')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 6a2 2 0 012-2h2M18 4h2a2 2 0 012 2v2M4 18v2a2 2 0 002 2h2M18 20h2a2 2 0 002-2v-2"/>
+              <rect x="8" y="8" width="8" height="8" rx="1"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label">이동 로케이션 <span class="required">필수</span></div>
+        <div class="input-wrap">
+          <input type="text" id="mv-to" placeholder="이동할 위치 예: 2P-04-01-01" autocomplete="off"
+            onkeydown="if(event.key==='Enter'){document.getElementById('mv-qty').focus()}" />
+          <button class="scan-btn" onclick="openCamera('mv-to')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 6a2 2 0 012-2h2M18 4h2a2 2 0 012 2v2M4 18v2a2 2 0 002 2h2M18 20h2a2 2 0 002-2v-2"/>
+              <rect x="8" y="8" width="8" height="8" rx="1"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label">수량 <span class="required">필수</span></div>
+        <div class="qty-wrap">
+          <button class="qty-btn" onclick="changeQty('mv-qty', -1)">−</button>
+          <input type="number" id="mv-qty" value="1" min="1"
+            onkeydown="if(event.key==='Enter'){saveMove()}" />
+          <button class="qty-btn" onclick="changeQty('mv-qty', 1)">+</button>
+        </div>
+      </div>
+    </div>
+    <button class="save-btn" id="mv-save-btn" onclick="saveMove()">이동 저장</button>
+  </div>
+  <!-- 로그 탭 -->
+  <div class="section" id="section-log">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">오늘 입고</div>
+        <div class="stat-value blue" id="stat-inbound">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">오늘 이동</div>
+        <div class="stat-value green" id="stat-move">0</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="log-header">
+        <div class="card-label" style="margin-bottom:0">작업 이력</div>
+        <button class="log-clear" onclick="clearLog()">전체 삭제</button>
+      </div>
+      <div id="log-count" class="log-count" style="margin-bottom:10px;margin-top:2px"></div>
+      <div class="log-list" id="log-list">
+        <div class="empty-log">아직 작업 내역이 없습니다</div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Camera modal -->
+<div class="modal-overlay" id="cameraModal" style="display:none">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span class="modal-title">📷 스캔</span>
+      <button class="modal-close" onclick="closeCamera()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="camera-area">
+      <video id="cameraVideo" autoplay playsinline></video>
+      <div class="scan-guide">
+        <div class="scan-box">
+          <div class="scan-line"></div>
+          <div class="scan-corner tl"></div>
+          <div class="scan-corner tr"></div>
+          <div class="scan-corner bl"></div>
+          <div class="scan-corner br"></div>
+        </div>
+      </div>
+      <div class="scan-hint">바코드 또는 텍스트를 박스 안에 맞춰주세요</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeCamera()">취소</button>
+      <button class="btn-capture" onclick="captureOCR()">📸 캡처 및 인식</button>
+    </div>
+  </div>
+</div>
+<canvas id="ocr"></canvas>
+<div class="toast-wrap" id="toastWrap"></div>
+<!-- Tesseract.js OCR -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script>
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzqbytOEkLyKE0LoZCl5BiKMllmPArYV_siU4dUSsQq2TuYQr82IRcRxKIHtzIWYqU/exec';
+const SHEET_ID = '1zXu0gv4XAnEOHtldNgFZ1aOA-n0nIofeBMxmCW7UXRg';
+let currentScanTarget = null;
+let videoStream = null;
+let sessionLog = [];
+let ocrWorker = null;
+/* ── Apps Script URL 확인 ── */
+function checkConnection() {
+  const el = document.getElementById('sheetStatus');
+  if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+    el.textContent = 'URL 설정 필요';
+    el.style.background = 'rgba(245,166,35,0.15)';
+    el.style.color = '#f5a623';
+    el.style.borderColor = 'rgba(245,166,35,0.3)';
+  } else {
+    el.textContent = '시트 연결됨';
+  }
+}
+/* ── 탭 전환 (event를 명시적으로 전달받도록 수정 — 전역 event 의존 제거) ── */
+function switchTab(name, evt) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  const target = (evt && evt.currentTarget) ? evt.currentTarget : null;
+  if (target) target.classList.add('active');
+}
+/* ── 수량 조절 ── */
+function changeQty(id, delta) {
+  const el = document.getElementById(id);
+  const v = parseInt(el.value) || 1;
+  el.value = Math.max(1, v + delta);
+}
+/* ── 엔터 → 다음 필드 포커스 ── */
+function handleItemKeydown(e, nextId) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    document.getElementById(nextId)?.focus();
+  }
+}
+/* ── 토스트 메시지 ── */
+function showToast(type, title, sub) {
+  const wrap = document.getElementById('toastWrap');
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+  t.innerHTML = `<span class="toast-icon">${icon}</span>
+    <div class="toast-text">${title}${sub ? `<div class="toast-sub">${sub}</div>` : ''}</div>`;
+  wrap.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.4s'; setTimeout(() => t.remove(), 400); }, 2800);
+}
+/* ── UNIQUEID 생성 ── */
+function genId() {
+  return Math.random().toString(16).slice(2, 10);
+}
+/* ── 시트에 저장 (실제 응답을 읽어 성공/실패를 판별) ──
+   기존 no-cors 방식은 응답을 읽을 수 없어 실패해도 항상 성공 처리되는 문제가 있었음.
+   Apps Script GET 웹앱은 기본적으로 Access-Control-Allow-Origin: * 를 보내므로
+   no-cors 없이 일반 fetch로 응답(JSON)을 읽을 수 있음. */
+async function postToSheet(sheet, rowData) {
+  const params = new URLSearchParams();
+  params.append('sheet', sheet);
+  params.append('row', JSON.stringify(rowData));
+  let res;
+  try {
+    res = await fetch(APPS_SCRIPT_URL + '?' + params.toString(), { method: 'GET' });
+  } catch (networkErr) {
+    // fetch 자체가 실패 (CORS 차단, 네트워크 오류, 오프라인 등)
+    throw new Error('서버에 연결할 수 없습니다: ' + networkErr.message);
+  }
+  if (!res.ok) {
+    throw new Error('서버 오류 (HTTP ' + res.status + ')');
+  }
+  let data;
+  try {
+    data = await res.json();
+  } catch (parseErr) {
+    throw new Error('서버 응답을 해석할 수 없습니다');
+  }
+  if (!data || data.ok !== true) {
+    throw new Error((data && data.error) ? data.error : '저장 실패 (원인 불명)');
+  }
+  return data;
+}
+/* ── 입고 저장 ── */
+async function saveInbound() {
+  const item = document.getElementById('ib-item').value.trim();
+  const loc  = document.getElementById('ib-location').value.trim();
+  const qty  = parseInt(document.getElementById('ib-qty').value) || 0;
+  if (!item) { showToast('error', '입고 품목을 입력하세요'); document.getElementById('ib-item').focus(); return; }
+  if (!loc)  { showToast('error', '입고 로케이션을 입력하세요'); document.getElementById('ib-location').focus(); return; }
+  if (qty < 1) { showToast('error', '수량은 1 이상이어야 합니다'); return; }
+  const btn = document.getElementById('ib-save-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> 저장 중...';
+  const today = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric' });
+  const id = genId();
+  try {
+    // A:날짜  B:입고품목  C:입고로케이션  D:수량  E:ID
+    // F열(확인) 이후는 시트 수식이 자동 처리
+    await postToSheet('입고', [today, item, loc, qty, id]);
+    addLog('inbound', item, loc, '', qty);
+    showToast('success', '입고 저장 완료', `${item} · ${loc} · ${qty}개`);
+    /* ← 화면 유지, 다음 입력을 위해 필드만 초기화 */
+    document.getElementById('ib-item').value = '';
+    document.getElementById('ib-location').value = '';
+    document.getElementById('ib-qty').value = '1';
+    document.getElementById('ib-item').focus();
+  } catch (e) {
+    showToast('error', '저장 실패', e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '입고 저장';
+  }
+}
+/* ── 이동 저장 ── */
+async function saveMove() {
+  const item = document.getElementById('mv-item').value.trim();
+  const from = document.getElementById('mv-from').value.trim();
+  const to   = document.getElementById('mv-to').value.trim();
+  const qty  = parseInt(document.getElementById('mv-qty').value) || 0;
+  if (!item) { showToast('error', '이동 품목을 입력하세요'); document.getElementById('mv-item').focus(); return; }
+  if (!from) { showToast('error', '반출 로케이션을 입력하세요'); document.getElementById('mv-from').focus(); return; }
+  if (!to)   { showToast('error', '이동 로케이션을 입력하세요'); document.getElementById('mv-to').focus(); return; }
+  if (qty < 1) { showToast('error', '수량은 1 이상이어야 합니다'); return; }
+  const btn = document.getElementById('mv-save-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> 저장 중...';
+  const id = genId();
+  try {
+    // A:날짜  B:이동품목  C:반출로케이션  D:이동로케이션  E:수량  F:ID
+    // G열 이후는 시트 수식이 자동 처리
+    const today = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric' });
+    await postToSheet('로케이션이동', [today, item, from, to, qty, id]);
+    addLog('move', item, from, to, qty);
+    showToast('success', '이동 저장 완료', `${item} · ${from} → ${to}`);
+    /* ← 화면 유지, 필드만 초기화 */
+    document.getElementById('mv-item').value = '';
+    document.getElementById('mv-from').value = '';
+    document.getElementById('mv-to').value = '';
+    document.getElementById('mv-qty').value = '1';
+    document.getElementById('mv-item').focus();
+  } catch (e) {
+    showToast('error', '저장 실패', e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '이동 저장';
+  }
+}
+/* ── 로그 추가 ── */
+function addLog(type, item, from, to, qty) {
+  const now = new Date();
+  const time = now.toTimeString().slice(0, 5);
+  sessionLog.unshift({ type, item, from, to, qty, time });
+  renderLog();
+  updateStats();
+}
+function renderLog() {
+  const list = document.getElementById('log-list');
+  const cnt = document.getElementById('log-count');
+  if (sessionLog.length === 0) {
+    list.innerHTML = '<div class="empty-log">아직 작업 내역이 없습니다</div>';
+    cnt.textContent = '';
+    return;
+  }
+  cnt.textContent = `총 ${sessionLog.length}건`;
+  list.innerHTML = sessionLog.map(l => `
+    <div class="log-item">
+      <div class="log-dot ${l.type}"></div>
+      <div class="log-info">
+        <div class="log-item-title">${l.item}</div>
+        <div class="log-item-sub">${l.type === 'inbound' ? '📥 입고: ' + l.from : '🔄 이동: ' + l.from + ' → ' + l.to}</div>
+      </div>
+      <div class="log-qty">${l.qty}개</div>
+      <div class="log-time">${l.time}</div>
+    </div>
+  `).join('');
+}
+function updateStats() {
+  document.getElementById('stat-inbound').textContent = sessionLog.filter(l => l.type === 'inbound').length;
+  document.getElementById('stat-move').textContent = sessionLog.filter(l => l.type === 'move').length;
+}
+function clearLog() {
+  if (sessionLog.length === 0) return;
+  sessionLog = [];
+  renderLog();
+  updateStats();
+}
+/* ── 카메라 / OCR ── */
+async function openCamera(targetId) {
+  currentScanTarget = targetId;
+  const modal = document.getElementById('cameraModal');
+  modal.style.display = 'flex';
+  try {
+    videoStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+    });
+    document.getElementById('cameraVideo').srcObject = videoStream;
+  } catch (e) {
+    showToast('error', '카메라 접근 실패', '권한을 허용해주세요');
+    closeCamera();
+  }
+}
+function closeCamera() {
+  document.getElementById('cameraModal').style.display = 'none';
+  if (videoStream) { videoStream.getTracks().forEach(t => t.stop()); videoStream = null; }
+}
+async function captureOCR() {
+  const video = document.getElementById('cameraVideo');
+  const canvas = document.getElementById('ocr');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0);
+  closeCamera();
+  showToast('info', 'OCR 인식 중...', '잠시 기다려주세요');
+  try {
+    if (!ocrWorker) {
+      ocrWorker = await Tesseract.createWorker('kor+eng');
+    }
+    const { data: { text } } = await ocrWorker.recognize(canvas);
+    const cleaned = text.replace(/\s+/g, ' ').trim();
+    /* 숫자만 있으면 바코드로, 그 외 텍스트로케이션 */
+    const extracted = extractBestToken(cleaned);
+    if (extracted) {
+      document.getElementById(currentScanTarget).value = extracted;
+      showToast('success', '인식 완료', extracted);
+      /* 품목 필드에서 인식 완료 시 → 다음 로케이션 필드로 이동 */
+      const nextMap = {
+        'ib-item': 'ib-location',
+        'mv-item': 'mv-from'
+      };
+      const nextId = nextMap[currentScanTarget];
+      if (nextId) setTimeout(() => document.getElementById(nextId)?.focus(), 100);
+    } else {
+      showToast('error', '텍스트 인식 실패', '다시 시도해주세요');
+    }
+  } catch (e) {
+    showToast('error', 'OCR 오류', e.message);
+  }
+}
+function extractBestToken(text) {
+  /* 로케이션 패턴 2P-03-03-01, 2T-11-02-01 등 */
+  const locMatch = text.match(/[0-9][A-Z]-[0-9A-Z]{2}-[0-9]{2}-[0-9]{2}/);
+  if (locMatch) return locMatch[0];
+  /* 바코드: 8~13자리 숫자 */
+  const bcMatch = text.match(/\b[0-9]{8,13}\b/);
+  if (bcMatch) return bcMatch[0];
+  /* 공백 제거한 첫 토큰 */
+  const tokens = text.split(/\s+/).filter(t => t.length > 2);
+  return tokens[0] || null;
+}
+/* ── 초기화 ── */
+checkConnection();
+</script>
+</body>
+</html>
